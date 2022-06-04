@@ -2,255 +2,129 @@ import React from "react";
 
 import { User as FirebaseUser } from "firebase/auth";
 import {
-    Authenticator,
-    buildCollection,
-    buildProperty,
-    buildSchema,
-    EntityReference,
-    FirebaseCMSApp,
-    NavigationBuilder,
-    NavigationBuilderProps
+  Authenticator,
+  buildCollection,
+  buildProperty,
+  buildSchema,
+  EntityReference,
+  FirebaseCMSApp,
+  Navigation,
+  NavigationBuilder,
+  NavigationBuilderProps
 } from "@camberi/firecms";
+
+import { projectSchema } from "./schemas/project_schema";
 
 import "typeface-rubik";
 import "typeface-space-mono";
+import logo from "./images/favicon.png";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDcJyRBlV0YtWzRY7EbuNiTBPbK6soA02g",
-  authDomain: "sandbox-fc9f2.firebaseapp.com",
-  databaseURL: "https://sandbox-fc9f2.firebaseio.com",
-  projectId: "sandbox-fc9f2",
-  storageBucket: "sandbox-fc9f2.appspot.com",
-  messagingSenderId: "1012108194902",
-  appId: "1:1012108194902:web:629fb721998c892cdeb7f7"
+  apiKey: "AIzaSyAYtLz9FaZHXJJNIeJ9gG4G3V9SZKhpXoY",
+  authDomain: "adkaros-site.firebaseapp.com",
+  projectId: "adkaros-site",
+  storageBucket: "adkaros-site.appspot.com",
+  messagingSenderId: "5264531907",
+  appId: "1:5264531907:web:9483232ab92b0eb055dd76",
+  measurementId: "G-6W64D23BPL"
 };
 
 const locales = {
-    "en-US": "English (United States)",
-    "es-ES": "Spanish (Spain)",
-    "de-DE": "German"
+  "en-US": "English (United States)",
+  "es-ES": "Spanish (Spain)",
+  "de-DE": "German"
 };
 
-type Product = {
-    name: string;
-    price: number;
-    status: string;
-    published: boolean;
-    related_products: EntityReference[];
-    main_image: string;
-    tags: string[];
-    description: string;
-    categories: string[];
-    publisher: {
-        name: string;
-        external_id: string;
-    },
-    expires_on: Date
-}
-
-const productSchema = buildSchema<Product>({
-    name: "Product",
-    properties: {
-        name: {
-            title: "Name",
-            validation: { required: true },
-            dataType: "string"
-        },
-        price: {
-            title: "Price",
-            validation: {
-                required: true,
-                requiredMessage: "You must set a price between 0 and 1000",
-                min: 0,
-                max: 1000
-            },
-            description: "Price with range validation",
-            dataType: "number"
-        },
-        status: {
-            title: "Status",
-            validation: { required: true },
-            dataType: "string",
-            description: "Should this product be visible in the website",
-            longDescription: "Example of a long description hidden under a tooltip. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin quis bibendum turpis. Sed scelerisque ligula nec nisi pellentesque, eget viverra lorem facilisis. Praesent a lectus ac ipsum tincidunt posuere vitae non risus. In eu feugiat massa. Sed eu est non velit facilisis facilisis vitae eget ante. Nunc ut malesuada erat. Nullam sagittis bibendum porta. Maecenas vitae interdum sapien, ut aliquet risus. Donec aliquet, turpis finibus aliquet bibendum, tellus dui porttitor quam, quis pellentesque tellus libero non urna. Vestibulum maximus pharetra congue. Suspendisse aliquam congue quam, sed bibendum turpis. Aliquam eu enim ligula. Nam vel magna ut urna cursus sagittis. Suspendisse a nisi ac justo ornare tempor vel eu eros.",
-            config: {
-                enumValues: {
-                    private: "Private",
-                    public: "Public"
-                }
-            }
-        },
-        published: ({ values }) => buildProperty({
-            title: "Published",
-            dataType: "boolean",
-            columnWidth: 100,
-            disabled: (
-                values.status === "public"
-                    ? false
-                    : {
-                        clearOnDisabled: true,
-                        disabledMessage: "Status must be public in order to enable this the published flag"
-                    }
-            )
-        }),
-        related_products: {
-            dataType: "array",
-            title: "Related products",
-            description: "Reference to self",
-            of: {
-                dataType: "reference",
-                path: "products"
-            }
-        },
-        main_image: buildProperty({ // The `buildProperty` method is an utility function used for type checking
-            title: "Image",
-            dataType: "string",
-            config: {
-                storageMeta: {
-                    mediaType: "image",
-                    storagePath: "images",
-                    acceptedFiles: ["image/*"]
-                }
-            }
-        }),
-        tags: {
-            title: "Tags",
-            description: "Example of generic array",
-            validation: { required: true },
-            dataType: "array",
-            of: {
-                dataType: "string"
-            }
-        },
-        description: {
-            title: "Description",
-            description: "Not mandatory but it'd be awesome if you filled this up",
-            longDescription: "Example of a long description hidden under a tooltip. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin quis bibendum turpis. Sed scelerisque ligula nec nisi pellentesque, eget viverra lorem facilisis. Praesent a lectus ac ipsum tincidunt posuere vitae non risus. In eu feugiat massa. Sed eu est non velit facilisis facilisis vitae eget ante. Nunc ut malesuada erat. Nullam sagittis bibendum porta. Maecenas vitae interdum sapien, ut aliquet risus. Donec aliquet, turpis finibus aliquet bibendum, tellus dui porttitor quam, quis pellentesque tellus libero non urna. Vestibulum maximus pharetra congue. Suspendisse aliquam congue quam, sed bibendum turpis. Aliquam eu enim ligula. Nam vel magna ut urna cursus sagittis. Suspendisse a nisi ac justo ornare tempor vel eu eros.",
-            dataType: "string",
-            columnWidth: 300
-        },
-        categories: {
-            title: "Categories",
-            validation: { required: true },
-            dataType: "array",
-            of: {
-                dataType: "string",
-                config: {
-                    enumValues: {
-                        electronics: "Electronics",
-                        books: "Books",
-                        furniture: "Furniture",
-                        clothing: "Clothing",
-                        food: "Food"
-                    }
-                }
-            }
-        },
-        publisher: {
-            title: "Publisher",
-            description: "This is an example of a map property",
-            dataType: "map",
-            properties: {
-                name: {
-                    title: "Name",
-                    dataType: "string"
-                },
-                external_id: {
-                    title: "External id",
-                    dataType: "string"
-                }
-            }
-        },
-        expires_on: {
-            title: "Expires on",
-            dataType: "timestamp"
-        }
-    }
-});
-
 const localeSchema = buildSchema({
-    customId: locales,
-    name: "Locale",
-    properties: {
-        title: {
-            title: "Title",
-            validation: { required: true },
-            dataType: "string"
-        },
-        selectable: {
-            title: "Selectable",
-            description: "Is this locale selectable",
-            dataType: "boolean"
-        },
-        video: {
-            title: "Video",
-            dataType: "string",
-            validation: { required: false },
-            config: {
-                storageMeta: {
-                    mediaType: "video",
-                    storagePath: "videos",
-                    acceptedFiles: ["video/*"]
-                }
-            }
+  customId: locales,
+  name: "Locale",
+  properties: {
+    title: {
+      title: "Title",
+      validation: { required: true },
+      dataType: "string"
+    },
+    selectable: {
+      title: "Selectable",
+      description: "Is this locale selectable",
+      dataType: "boolean"
+    },
+    video: {
+      title: "Video",
+      dataType: "string",
+      validation: { required: false },
+      config: {
+        storageMeta: {
+          mediaType: "video",
+          storagePath: "videos",
+          acceptedFiles: ["video/*"]
         }
+      }
     }
+  }
 });
+
+const projectCollection = buildCollection({
+  path: "projects",
+  schema: projectSchema,
+  name: "Projects",
+  permissions: ({ authController }) => ({
+    edit: true,
+    create: true,
+    // we have created the roles object in the navigation builder
+    delete: authController.extra.roles.includes("admin")
+  }),
+  subcollections: [
+    buildCollection({
+      name: "Locales",
+      path: "locales",
+      schema: localeSchema
+    })
+  ]
+})
 
 export default function App() {
+  const navigation: NavigationBuilder = async ({
+    user,
+    authController
+  }: NavigationBuilderProps) => {
 
-    const navigation: NavigationBuilder = async ({
-                                                     user,
-                                                     authController
-                                                 }: NavigationBuilderProps) => {
-
-        return ({
-            collections: [
-                buildCollection({
-                    path: "products",
-                    schema: productSchema,
-                    name: "Products",
-                    permissions: ({ authController }) => ({
-                        edit: true,
-                        create: true,
-                        // we have created the roles object in the navigation builder
-                        delete: authController.extra.roles.includes("admin")
-                    }),
-                    subcollections: [
-                        buildCollection({
-                            name: "Locales",
-                            path: "locales",
-                            schema: localeSchema
-                        })
-                    ]
-                })
-            ]
-        });
+    const navigation: Navigation = {
+      collections: [
+        projectCollection
+      ],
     };
 
-    const myAuthenticator: Authenticator<FirebaseUser> = async ({
-                                                                    user,
-                                                                    authController
-                                                                }) => {
-        // You can throw an error to display a message
-        if(user?.email?.includes("flanders")){
-            throw Error("Stupid Flanders!");
-        }
-        
-        console.log("Allowing access to", user?.email);
-        // This is an example of retrieving async data related to the user
-        // and storing it in the user extra field.
-        const sampleUserData = await Promise.resolve({
-            roles: ["admin"]
-        });
-        authController.setExtra(sampleUserData);
-        return true;
-    };
+    return navigation;
+  };
 
-    return <FirebaseCMSApp
-        name={"My Online Shop"}
-        authentication={myAuthenticator}
-        navigation={navigation}
-        firebaseConfig={firebaseConfig}
-    />;
+  const myAuthenticator: Authenticator<FirebaseUser> = async ({
+    user,
+    authController
+  }) => {
+    // Personal CMS, don't allow anybody but me!
+    if (user?.email !== "karosandrew@gmail.com") {
+      throw new Error("You are not authorized to access this site");
+    }
+
+    console.log("Allowing access to", user?.email);
+    // This is an example of retrieving async data related to the user
+    // and storing it in the user extra field.
+    const sampleUserData = await Promise.resolve({
+      roles: ["admin"]
+    });
+    authController.setExtra(sampleUserData);
+    return true;
+  };
+
+  return <FirebaseCMSApp
+    name={"Project CMS"}
+    authentication={myAuthenticator}
+    signInOptions={[
+      'google.com',
+    ]}
+    navigation={navigation}
+    firebaseConfig={firebaseConfig}
+    logo={logo}
+  />;
 }
