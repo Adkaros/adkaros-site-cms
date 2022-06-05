@@ -1,5 +1,17 @@
 {
   "projects": {
-    "default": "sandbox-fc9f2"
+    "default": "adkaros-site"
+  },
+  "targets": {
+    "adkaros-site": {
+      "hosting": {
+        "cms": [
+          "adkaros-cms"
+        ],
+        "site": [
+          "adkaros-site"
+        ]
+      }
+    }
   }
 }
