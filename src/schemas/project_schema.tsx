@@ -31,6 +31,7 @@ export const projectSchema = buildSchema<Project>({
                 storageMeta: {
                     mediaType: "image",
                     storagePath: "images",
+                    storeUrl: true,
                     acceptedFiles: ["image/*"],
                     metadata: {
                         cacheControl: "max-age=1000000"
